@@ -1,0 +1,21 @@
+{
+  "update_id": 741561928,
+  "message": {
+    "message_id": 82,
+    "from": {
+      "id": 287204019,
+      "is_bot": false,
+      "first_name": "Igor",
+      "username": "Gor777123",
+      "language_code": "ru"
+    },
+    "chat": {
+      "id": 287204019,
+      "first_name": "Igor",
+      "username": "Gor777123",
+      "type": "private"
+    },
+    "date": 1614531425,
+    "text": "Ghh TV chug"
+  }
+}
