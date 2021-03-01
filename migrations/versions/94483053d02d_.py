@@ -1,8 +1,8 @@
-"""Тут текст коммита
+"""empty message
 
-Revision ID: 19792c1e75db
+Revision ID: 94483053d02d
 Revises: 
-Create Date: 2021-03-01 15:27:48.769260
+Create Date: 2021-03-01 23:29:56.908313
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '19792c1e75db'
+revision = '94483053d02d'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -35,25 +35,6 @@ def upgrade():
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_module_name'), 'module', ['name'], unique=False)
-    op.create_table('pupil',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(length=64), nullable=True),
-    sa.Column('surname', sa.String(length=120), nullable=True),
-    sa.Column('patronim', sa.String(length=120), nullable=True),
-    sa.Column('email', sa.String(length=120), nullable=True),
-    sa.Column('phone', sa.String(length=120), nullable=True),
-    sa.Column('login', sa.String(length=120), nullable=False),
-    sa.Column('password', sa.String(length=120), nullable=False),
-    sa.Column('role', sa.SmallInteger(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_pupil_email'), 'pupil', ['email'], unique=False)
-    op.create_index(op.f('ix_pupil_login'), 'pupil', ['login'], unique=False)
-    op.create_index(op.f('ix_pupil_name'), 'pupil', ['name'], unique=False)
-    op.create_index(op.f('ix_pupil_password'), 'pupil', ['password'], unique=False)
-    op.create_index(op.f('ix_pupil_patronim'), 'pupil', ['patronim'], unique=False)
-    op.create_index(op.f('ix_pupil_phone'), 'pupil', ['phone'], unique=False)
-    op.create_index(op.f('ix_pupil_surname'), 'pupil', ['surname'], unique=False)
     op.create_table('question',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('text', sa.String(length=500), nullable=True),
@@ -65,11 +46,23 @@ def upgrade():
     )
     op.create_index(op.f('ix_question_anwser'), 'question', ['anwser'], unique=False)
     op.create_index(op.f('ix_question_text'), 'question', ['text'], unique=False)
+    op.create_table('solution',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('homework_solution', sa.String(length=120), nullable=True),
+    sa.Column('ticket', sa.Integer(), nullable=True),
+    sa.Column('mark', sa.Integer(), nullable=True),
+    sa.Column('comment', sa.String(length=500), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_solution_comment'), 'solution', ['comment'], unique=False)
+    op.create_index(op.f('ix_solution_homework_solution'), 'solution', ['homework_solution'], unique=False)
+    op.create_index(op.f('ix_solution_mark'), 'solution', ['mark'], unique=False)
     op.create_table('sys_admin',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('login', sa.String(length=120), nullable=False),
     sa.Column('password', sa.String(length=120), nullable=False),
     sa.Column('role', sa.SmallInteger(), nullable=True),
+    sa.Column('chat_id', sa.Integer(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_sys_admin_login'), 'sys_admin', ['login'], unique=False)
@@ -84,7 +77,8 @@ def upgrade():
     sa.Column('login', sa.String(length=120), nullable=False),
     sa.Column('password', sa.String(length=120), nullable=False),
     sa.Column('role', sa.SmallInteger(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
+    sa.Column('chat_id', sa.Integer(), nullable=False),
+    sa.PrimaryKeyConstraint('id', 'chat_id')
     )
     op.create_index(op.f('ix_teacher_email'), 'teacher', ['email'], unique=False)
     op.create_index(op.f('ix_teacher_login'), 'teacher', ['login'], unique=False)
@@ -99,42 +93,55 @@ def upgrade():
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_ticket_ids'), 'ticket', ['ids'], unique=False)
-    op.create_table('group_pupils',
-    sa.Column('pupil_id', sa.Integer(), nullable=True),
-    sa.Column('group_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['group_id'], ['group.id'], ),
-    sa.ForeignKeyConstraint(['pupil_id'], ['pupil.id'], )
-    )
     op.create_table('group_teachers',
     sa.Column('teacher_id', sa.Integer(), nullable=True),
     sa.Column('group_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['group_id'], ['group.id'], ),
     sa.ForeignKeyConstraint(['teacher_id'], ['teacher.id'], )
     )
-    op.create_table('solution',
+    op.create_table('pupil',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('homework_solution', sa.String(length=120), nullable=True),
-    sa.Column('ticket', sa.Integer(), nullable=True),
+    sa.Column('name', sa.String(length=64), nullable=True),
+    sa.Column('surname', sa.String(length=120), nullable=True),
+    sa.Column('patronim', sa.String(length=120), nullable=True),
+    sa.Column('email', sa.String(length=120), nullable=True),
+    sa.Column('phone', sa.String(length=120), nullable=True),
+    sa.Column('login', sa.String(length=120), nullable=False),
+    sa.Column('password', sa.String(length=120), nullable=False),
+    sa.Column('role', sa.SmallInteger(), nullable=True),
     sa.Column('pupil_id', sa.Integer(), nullable=True),
-    sa.Column('mark', sa.Integer(), nullable=True),
-    sa.Column('comment', sa.String(length=500), nullable=True),
-    sa.ForeignKeyConstraint(['pupil_id'], ['pupil.id'], ),
+    sa.Column('chat_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['pupil_id'], ['solution.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_solution_comment'), 'solution', ['comment'], unique=False)
-    op.create_index(op.f('ix_solution_homework_solution'), 'solution', ['homework_solution'], unique=False)
-    op.create_index(op.f('ix_solution_mark'), 'solution', ['mark'], unique=False)
+    op.create_index(op.f('ix_pupil_email'), 'pupil', ['email'], unique=False)
+    op.create_index(op.f('ix_pupil_login'), 'pupil', ['login'], unique=False)
+    op.create_index(op.f('ix_pupil_name'), 'pupil', ['name'], unique=False)
+    op.create_index(op.f('ix_pupil_password'), 'pupil', ['password'], unique=False)
+    op.create_index(op.f('ix_pupil_patronim'), 'pupil', ['patronim'], unique=False)
+    op.create_index(op.f('ix_pupil_phone'), 'pupil', ['phone'], unique=False)
+    op.create_index(op.f('ix_pupil_surname'), 'pupil', ['surname'], unique=False)
+    op.create_table('group_pupils',
+    sa.Column('pupil_id', sa.Integer(), nullable=True),
+    sa.Column('group_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['group_id'], ['group.id'], ),
+    sa.ForeignKeyConstraint(['pupil_id'], ['pupil.id'], )
+    )
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_index(op.f('ix_solution_mark'), table_name='solution')
-    op.drop_index(op.f('ix_solution_homework_solution'), table_name='solution')
-    op.drop_index(op.f('ix_solution_comment'), table_name='solution')
-    op.drop_table('solution')
-    op.drop_table('group_teachers')
     op.drop_table('group_pupils')
+    op.drop_index(op.f('ix_pupil_surname'), table_name='pupil')
+    op.drop_index(op.f('ix_pupil_phone'), table_name='pupil')
+    op.drop_index(op.f('ix_pupil_patronim'), table_name='pupil')
+    op.drop_index(op.f('ix_pupil_password'), table_name='pupil')
+    op.drop_index(op.f('ix_pupil_name'), table_name='pupil')
+    op.drop_index(op.f('ix_pupil_login'), table_name='pupil')
+    op.drop_index(op.f('ix_pupil_email'), table_name='pupil')
+    op.drop_table('pupil')
+    op.drop_table('group_teachers')
     op.drop_index(op.f('ix_ticket_ids'), table_name='ticket')
     op.drop_table('ticket')
     op.drop_index(op.f('ix_teacher_surname'), table_name='teacher')
@@ -148,17 +155,13 @@ def downgrade():
     op.drop_index(op.f('ix_sys_admin_password'), table_name='sys_admin')
     op.drop_index(op.f('ix_sys_admin_login'), table_name='sys_admin')
     op.drop_table('sys_admin')
+    op.drop_index(op.f('ix_solution_mark'), table_name='solution')
+    op.drop_index(op.f('ix_solution_homework_solution'), table_name='solution')
+    op.drop_index(op.f('ix_solution_comment'), table_name='solution')
+    op.drop_table('solution')
     op.drop_index(op.f('ix_question_text'), table_name='question')
     op.drop_index(op.f('ix_question_anwser'), table_name='question')
     op.drop_table('question')
-    op.drop_index(op.f('ix_pupil_surname'), table_name='pupil')
-    op.drop_index(op.f('ix_pupil_phone'), table_name='pupil')
-    op.drop_index(op.f('ix_pupil_patronim'), table_name='pupil')
-    op.drop_index(op.f('ix_pupil_password'), table_name='pupil')
-    op.drop_index(op.f('ix_pupil_name'), table_name='pupil')
-    op.drop_index(op.f('ix_pupil_login'), table_name='pupil')
-    op.drop_index(op.f('ix_pupil_email'), table_name='pupil')
-    op.drop_table('pupil')
     op.drop_index(op.f('ix_module_name'), table_name='module')
     op.drop_table('module')
     op.drop_index(op.f('ix_group_time'), table_name='group')

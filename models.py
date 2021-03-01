@@ -22,8 +22,7 @@ class Pupil(db.Model):
     role = db.Column(db.SmallInteger, default = ROLE_STUDENT)
     cats = db.relationship('Group', secondary=course_pupils, backref=db.backref('pupil', lazy='dynamic'))
     pupil_id = db.Column(db.Integer, db.ForeignKey('solution.id'))
-
-
+    chat_id = db.Column(db.Integer)
 
     def __init__(self, id, name,surname,email,phone,patronim=''):
         self.name = name
@@ -55,7 +54,7 @@ class Teacher(db.Model):
     password = db.Column(db.String(120), index=True, nullable=False)
     role = db.Column(db.SmallInteger, default=ROLE_TEACHER)
     rel = db.relationship('Group', secondary=group_teachers, backref=db.backref('teacher', lazy='dynamic'))
-
+    chat_id = db.Column(db.Integer, primary_key=True)
     def __init__(self,name,surname,email,phone,patronim=''):
         self.name = name
         self.surname = surname
@@ -140,9 +139,14 @@ class Ticket(db.Model):
 class Sys_Admin(db.Model):
     __tablename__ = 'sys_admin'
     id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), index=True)
+    surname = db.Column(db.String(120), index=True)
+    patronim = db.Column(db.String(120), index=True, nullable=True, default='')
     login = db.Column(db.String(120), index=True, nullable=False)
     password = db.Column(db.String(120), index=True, nullable=False)
     role = db.Column(db.SmallInteger, default=ROLE_SYS)
+    chat_id = db.Column(db.Integer)
+    status = db.Column(db.SmallInteger, default=ROLE_SYS)
     def __init__(self,login,password):
         self.login = login
         self.time = password
