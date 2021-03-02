@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 94483053d02d
+Revision ID: 4e44d8ddd7ef
 Revises: 
-Create Date: 2021-03-01 23:29:56.908313
+Create Date: 2021-03-02 06:12:43.901364
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '94483053d02d'
+revision = '4e44d8ddd7ef'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -59,14 +59,21 @@ def upgrade():
     op.create_index(op.f('ix_solution_mark'), 'solution', ['mark'], unique=False)
     op.create_table('sys_admin',
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=64), nullable=True),
+    sa.Column('surname', sa.String(length=120), nullable=True),
+    sa.Column('patronim', sa.String(length=120), nullable=True),
     sa.Column('login', sa.String(length=120), nullable=False),
     sa.Column('password', sa.String(length=120), nullable=False),
     sa.Column('role', sa.SmallInteger(), nullable=True),
     sa.Column('chat_id', sa.Integer(), nullable=True),
+    sa.Column('status', sa.SmallInteger(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_sys_admin_login'), 'sys_admin', ['login'], unique=False)
+    op.create_index(op.f('ix_sys_admin_name'), 'sys_admin', ['name'], unique=False)
     op.create_index(op.f('ix_sys_admin_password'), 'sys_admin', ['password'], unique=False)
+    op.create_index(op.f('ix_sys_admin_patronim'), 'sys_admin', ['patronim'], unique=False)
+    op.create_index(op.f('ix_sys_admin_surname'), 'sys_admin', ['surname'], unique=False)
     op.create_table('teacher',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=64), nullable=True),
@@ -77,8 +84,9 @@ def upgrade():
     sa.Column('login', sa.String(length=120), nullable=False),
     sa.Column('password', sa.String(length=120), nullable=False),
     sa.Column('role', sa.SmallInteger(), nullable=True),
-    sa.Column('chat_id', sa.Integer(), nullable=False),
-    sa.PrimaryKeyConstraint('id', 'chat_id')
+    sa.Column('chat_id', sa.Integer(), nullable=True),
+    sa.Column('status', sa.SmallInteger(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_teacher_email'), 'teacher', ['email'], unique=False)
     op.create_index(op.f('ix_teacher_login'), 'teacher', ['login'], unique=False)
@@ -111,6 +119,7 @@ def upgrade():
     sa.Column('role', sa.SmallInteger(), nullable=True),
     sa.Column('pupil_id', sa.Integer(), nullable=True),
     sa.Column('chat_id', sa.Integer(), nullable=True),
+    sa.Column('status', sa.SmallInteger(), nullable=True),
     sa.ForeignKeyConstraint(['pupil_id'], ['solution.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -152,7 +161,10 @@ def downgrade():
     op.drop_index(op.f('ix_teacher_login'), table_name='teacher')
     op.drop_index(op.f('ix_teacher_email'), table_name='teacher')
     op.drop_table('teacher')
+    op.drop_index(op.f('ix_sys_admin_surname'), table_name='sys_admin')
+    op.drop_index(op.f('ix_sys_admin_patronim'), table_name='sys_admin')
     op.drop_index(op.f('ix_sys_admin_password'), table_name='sys_admin')
+    op.drop_index(op.f('ix_sys_admin_name'), table_name='sys_admin')
     op.drop_index(op.f('ix_sys_admin_login'), table_name='sys_admin')
     op.drop_table('sys_admin')
     op.drop_index(op.f('ix_solution_mark'), table_name='solution')

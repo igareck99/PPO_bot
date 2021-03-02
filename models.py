@@ -23,7 +23,7 @@ class Pupil(db.Model):
     cats = db.relationship('Group', secondary=course_pupils, backref=db.backref('pupil', lazy='dynamic'))
     pupil_id = db.Column(db.Integer, db.ForeignKey('solution.id'))
     chat_id = db.Column(db.Integer)
-
+    status = db.Column(db.SmallInteger, default=1)
     def __init__(self, id, name,surname,email,phone,login,password,patronim=''):
         self.name = name
         self.surname = surname
@@ -56,13 +56,16 @@ class Teacher(db.Model):
     password = db.Column(db.String(120), index=True, nullable=False)
     role = db.Column(db.SmallInteger, default=ROLE_TEACHER)
     rel = db.relationship('Group', secondary=group_teachers, backref=db.backref('teacher', lazy='dynamic'))
-    chat_id = db.Column(db.Integer, primary_key=True)
-    def __init__(self,name,surname,email,phone,patronim=''):
+    chat_id = db.Column(db.Integer)
+    status = db.Column(db.SmallInteger, default=1)
+    def __init__(self,name,surname,email,phone,login,password,patronim=''):
         self.name = name
         self.surname = surname
         self.patronim = patronim
         self.email = email
         self.phone = phone
+        self.login = login
+        self.password = password
 
     def __repr__(self):
         return 'Teacher {} {} {}'.format(self.name,self.surname,self.patronim)
@@ -148,7 +151,7 @@ class Sys_Admin(db.Model):
     password = db.Column(db.String(120), index=True, nullable=False)
     role = db.Column(db.SmallInteger, default=ROLE_SYS)
     chat_id = db.Column(db.Integer)
-    status = db.Column(db.SmallInteger, default=ROLE_SYS)
+    status = db.Column(db.SmallInteger, default=1)
     def __init__(self,login,password):
         self.login = login
         self.time = password

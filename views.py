@@ -28,8 +28,7 @@ def start(message):
     bot.send_message(message.chat.id, 'Здравствуйте! Введите Свои данные в формате логин пароль')
     print(message)
 
-@bot.message_handler(func=lambda message: len(message.text.split()) == 2 and (Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == 1) or
-                     Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == None)
+@bot.message_handler(func=lambda message: len(message.text.split()) == 2 and Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()==None)
 def auth(message):
     m = message.text.split()
     login = m[0]
@@ -48,8 +47,6 @@ def auth(message):
                 x.chat_id = message.chat.id
                 x.status = 2
                 db.session.commit()
-
-            #появляется доступ к кнопкам
     else:
         bot.send_message(message.chat.id, 'Неверный пароль, попробуйте ещё раз')
         return
@@ -122,8 +119,51 @@ def add_student_to_group(message):
     bot.send_message(message.chat.id, 'Ученик добавлен в группу', reply_markup=markup)
 
 
+@bot.message_handler(func=lambda message: message.text == 'Назначить группу преподавателю' and Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == 2)
+def add_teacher_to_group_info(message):
+    t = Teacher.query.all()
+    x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
+    g = Group.query.all()
+    teacher_string = 'Cписок Учителей\n'
+    for i in t:
+        s = '{} {} {} {}'.format(i.id, i.surname, i.name, i.patronim)
+        teacher_string += s + '\n'
+    teacher_string += '\n'+'Cписок групп' + '\n'
+    for y in g:
+        s = '{} {} {}'.format(y.id, y.name, y.time)
+        teacher_string += s + '\n'
+    teacher_string += 'Введите Id пользователя и id группы через пробел'
+    x.status = 5
+    db.session.commit()
+    bot.send_message(message.chat.id, teacher_string)
 
 
+@bot.message_handler(func=lambda message: Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status ==5)
+def add_teacher_to_group(message):
+    x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
+    m = message.text.split(' ')
+    if len(m) != 2:
+        x.status = 2
+        db.session.commit()
+        bot.send_message(message.chat.id, 'Неправильный ввод', reply_markup=markup)
+        return
+    p = Teacher.query.filter(Pupil.id == int(m[0])).first()
+    g = Group.query.filter(Group.id == int(m[1])).first()
+    if notNone([p, g]) is None:
+        x.status = 2
+        db.session.commit()
+        bot.send_message(message.chat.id, 'Неправильный id учителя или группы', reply_markup=markup)
+        return
+    if g in Teacher.query.filter(Teacher.id == int(m[0])).first().rel:
+        x.status = 2
+        db.session.commit()
+        bot.send_message(message.chat.id, 'Этот учитель уже в этой группе', reply_markup=markup)
+        return
+    p.rel.append(g)
+    db.session.commit()
+    x.status = 2
+    db.session.commit()
+    bot.send_message(message.chat.id, 'Учитель закреплен за группой', reply_markup=markup)
 
 
 
