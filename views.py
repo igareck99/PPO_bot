@@ -13,9 +13,16 @@ markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keybo
 itembtn1 = telebot.types.KeyboardButton('Добавить Новую группу')
 itembtn2 = telebot.types.KeyboardButton('Добавить Студента в группу')
 itembtn3 = telebot.types.KeyboardButton('Назначить группу преподавателю')
-itembtn4 = telebot.types.KeyboardButton('Зарегестрировать пользователя')
+itembtn4 = telebot.types.KeyboardButton('Зарегистрировать пользователя')
+register_markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
+itembtn5 = telebot.types.KeyboardButton('Учитель')
+itembtn6 = telebot.types.KeyboardButton('Ученик')
+itembtn7 = telebot.types.KeyboardButton('Админ Системы')
+itembtn8 = telebot.types.KeyboardButton('Админ учебного процесса')
 markup.row(itembtn1, itembtn2)
 markup.row(itembtn3, itembtn4)
+register_markup.row(itembtn5,itembtn6)
+register_markup.row(itembtn7,itembtn8)
 @app.route('/', methods=['POST'])
 def webhook():
     update = telebot.types.Update.de_json(request.stream.read().decode('utf-8'))
@@ -25,10 +32,27 @@ def webhook():
 
 @bot.message_handler(commands=['start'])
 def start(message):
+    pupil = Pupil.query.all()
+    teacher = Teacher.query.all()
+    sys_admin = Sys_Admin.query.all()
+    l = []
+    for x in pupil:
+        l.append(x)
+    for x in teacher:
+        l.append(x)
+    for x in sys_admin:
+        l.append(x)
+    for x in l:
+        if x.chat_id == message.chat.id:
+            x.chat_id = message.chat.id
+            x.status = 2
+            db.session.commit()
+            bot.send_message(message.chat.id, 'Здравствуйте,  {} {}'.format(x.name, x.patronim), reply_markup=markup)
+            return
     bot.send_message(message.chat.id, 'Здравствуйте! Введите Свои данные в формате логин пароль')
     print(message)
 
-@bot.message_handler(func=lambda message: len(message.text.split()) == 2 and Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()==None)
+@bot.message_handler(func=lambda message: len(message.text.split()) == 2 and Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()==1)
 def auth(message):
     m = message.text.split()
     login = m[0]
@@ -40,6 +64,7 @@ def auth(message):
     sys_admin = Sys_Admin.query.filter(Sys_Admin.login == login) \
         .filter(Sys_Admin.password == password).first()
     x = notNone([pupil, teacher, sys_admin])
+    print(x.chat)
     if x:
         if x.login == login and x.password == password:
             if isinstance(x, Sys_Admin):
@@ -107,7 +132,6 @@ def add_student_to_group(message):
         bot.send_message(message.chat.id, 'Неправильный id ученика или группы', reply_markup=markup)
         return
     if g in Pupil.query.filter(Pupil.id == int(m[0])).first().cats:
-        print(g)
         x.status = 2
         db.session.commit()
         bot.send_message(message.chat.id, 'Этот ученик уже в этой группе', reply_markup=markup)
@@ -166,7 +190,20 @@ def add_teacher_to_group(message):
     bot.send_message(message.chat.id, 'Учитель закреплен за группой', reply_markup=markup)
 
 
+@bot.message_handler(func=lambda message: message.text == 'Зарегистрировать пользователя' and Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == 2)
+def register_user(message):
+    x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
+    x.status = 5
+    db.session.commit()
+    bot.send_message(message.chat.id, 'Выберите кого вы хотите зарегестрировать', reply_markup=register_markup)
 
+#????????
+@bot.message_handler(func=lambda message: Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == 5)
+def register_user(message):
+    x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
+    x.status = 5
+    db.session.commit()
+    bot.send_message(message.chat.id, 'Выберите кого вы хотите зарегестрировать', reply_markup=register_markup)
 
 
 

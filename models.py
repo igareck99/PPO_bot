@@ -159,3 +159,16 @@ class Sys_Admin(db.Model):
 
     def __repr__(self):
         return f'{self.id} {self.login}'
+
+
+class Chat_table(db.Model):
+    __tablename__ = 'chat_model'
+    id = db.Column(db.Integer, primary_key=True)
+    chat_id = db.Column(db.Integer)
+
+    def __init__(self,chat_id):
+        self.chat_id = chat_id
+
+
+    def __repr__(self):
+        return f'{self.id} {self.chat_id}'
