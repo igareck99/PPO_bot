@@ -24,12 +24,14 @@ class Pupil(db.Model):
     pupil_id = db.Column(db.Integer, db.ForeignKey('solution.id'))
     chat_id = db.Column(db.Integer)
 
-    def __init__(self, id, name,surname,email,phone,patronim=''):
+    def __init__(self, id, name,surname,email,phone,login,password,patronim=''):
         self.name = name
         self.surname = surname
         self.patronim = patronim
         self.email = email
         self.phone = phone
+        self.login = login
+        self.password = password
 
 
     def __repr__(self):

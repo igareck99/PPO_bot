@@ -28,7 +28,8 @@ def start(message):
     bot.send_message(message.chat.id, 'Здравствуйте! Введите Свои данные в формате логин пароль')
     print(message)
 
-@bot.message_handler(func=lambda message: len(message.text.split()) == 2 and Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == 2 )
+@bot.message_handler(func=lambda message: len(message.text.split()) == 2 and (Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == 1) or
+                     Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == None)
 def auth(message):
     m = message.text.split()
     login = m[0]
@@ -63,7 +64,7 @@ def add_group_text(message):
     bot.send_message(message.chat.id, 'Введите название группы и время через пробел')
 
 @bot.message_handler(func=lambda message: Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == 3 )
-def add_city(message):
+def add_group(message):
     s = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
     s.status = 2
     name = message.text.split(' ')[0]
@@ -71,9 +72,54 @@ def add_city(message):
     x = Group(name, time)
     db.session.add(x)
     db.session.commit()
-    print('dfidjfijdfijdijf')
     bot.send_message(message.chat.id, 'Группа была успешно добавлена', reply_markup=markup)
 
+
+@bot.message_handler(func=lambda message: message.text == 'Добавить Студента в группу' and Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == 2)
+def add_student_to_group_info(message):
+    p = Pupil.query.all()
+    x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
+    g = Group.query.all()
+    pupil_string = 'Cписок студентов\n'
+    for i in p:
+        s = '{} {} {} {}'.format(i.id, i.surname, i.name, i.patronim)
+        pupil_string += s + '\n'
+    pupil_string += '\n'+'Cписок групп' + '\n'
+    for y in g:
+        s = '{} {} {}'.format(y.id, y.name, y.time)
+        pupil_string += s + '\n'
+    pupil_string += 'Введите Id пользователя и id группы через пробел'
+    x.status = 4
+    db.session.commit()
+    bot.send_message(message.chat.id, pupil_string)
+
+@bot.message_handler(func=lambda message: Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == 4)
+def add_student_to_group(message):
+    x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
+    m = message.text.split(' ')
+    if len(m) != 2:
+        x.status = 2
+        db.session.commit()
+        bot.send_message(message.chat.id, 'Неправильный ввод', reply_markup=markup)
+        return
+    p = Pupil.query.filter(Pupil.id == int(m[0])).first()
+    g = Group.query.filter(Group.id == int(m[1])).first()
+    if notNone([p, g]) is None:
+        x.status = 2
+        db.session.commit()
+        bot.send_message(message.chat.id, 'Неправильный id ученика или группы', reply_markup=markup)
+        return
+    if g in Pupil.query.filter(Pupil.id == int(m[0])).first().cats:
+        print(g)
+        x.status = 2
+        db.session.commit()
+        bot.send_message(message.chat.id, 'Этот ученик уже в этой группе', reply_markup=markup)
+        return
+    p.cats.append(g)
+    db.session.commit()
+    x.status = 2
+    db.session.commit()
+    bot.send_message(message.chat.id, 'Ученик добавлен в группу', reply_markup=markup)
 
 
 
