@@ -19,10 +19,22 @@ itembtn5 = telebot.types.KeyboardButton('Учитель')
 itembtn6 = telebot.types.KeyboardButton('Ученик')
 itembtn7 = telebot.types.KeyboardButton('Админ Системы')
 itembtn8 = telebot.types.KeyboardButton('Админ учебного процесса')
+itembtn9 = telebot.types.KeyboardButton('Вернуться на главную СисАдмина')
+itembtn10 = telebot.types.KeyboardButton('Добавить задание')
+itembtn11 = telebot.types.KeyboardButton('Список групп')
+itembtn12 = telebot.types.KeyboardButton('Результаты тестирования')
+itembtn13 = telebot.types.KeyboardButton('Создать Билет для тестирования')
+itembtn14 = telebot.types.KeyboardButton('Новый модуль')
+teahcer_markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
+teahcer_markup.row(itembtn13, itembtn12)
+teahcer_markup.row(itembtn11, itembtn10)
+teahcer_markup.row(itembtn14)
 markup.row(itembtn1, itembtn2)
 markup.row(itembtn3, itembtn4)
+markup.row(itembtn9)
 register_markup.row(itembtn5,itembtn6)
 register_markup.row(itembtn7,itembtn8)
+register_markup.row(itembtn9)
 @app.route('/', methods=['POST'])
 def webhook():
     update = telebot.types.Update.de_json(request.stream.read().decode('utf-8'))
@@ -47,14 +59,19 @@ def start(message):
             x.chat_id = message.chat.id
             x.status = 2
             db.session.commit()
-            bot.send_message(message.chat.id, 'Здравствуйте,  {} {}'.format(x.name, x.patronim), reply_markup=markup)
+            if isinstance(x, Sys_Admin):
+                bot.send_message(message.chat.id, 'Здравствуйте,  {} {}'.format(x.name, x.patronim), reply_markup=markup)
+            elif isinstance(x,Teacher):
+                x.status = 10
+                db.session.commit()
+                bot.send_message(message.chat.id, 'Здравствуйте,  {} {}'.format(x.name, x.patronim),
+                                 reply_markup=teahcer_markup)
             return
     bot.send_message(message.chat.id, 'Здравствуйте! Введите Свои данные в формате логин пароль')
     print(message)
 
-@bot.message_handler(func=lambda message: len(message.text.split()) == 2 and check_status(message.chat.id) ==1)
+@bot.message_handler(func=lambda message: len(message.text.split()) == 2 and check_status(message.chat.id) ==1 and check_teacher_status(message.chat.id)==1)
 def auth(message):
-    print('Auth message started')
     m = message.text.split()
     login = m[0]
     password = m[1]
@@ -72,9 +89,20 @@ def auth(message):
                 x.chat_id = message.chat.id
                 x.status = 2
                 db.session.commit()
+            elif isinstance(x, Teacher):
+                bot.send_message(message.chat.id, 'Здравствуйте,  {} {}'.format(x.name, x.patronim), reply_markup=teahcer_markup)
+                x.chat_id = message.chat.id
+                x.status = 10
+                db.session.commit()
     else:
         bot.send_message(message.chat.id, 'Неверный пароль, попробуйте ещё раз')
         return
+@bot.message_handler(func=lambda message: message.text == 'Вернуться на главную СисАдмина' and check_status(message.chat.id) >=2
+                     and check_status(message.chat.id)<=9)
+def return_sys_admin(message):
+    s = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
+    s.status = 2
+    bot.send_message(message.chat.id, 'Вы вернулись на главную', reply_markup=markup)
 
 
 #Действия для Администратора Системы
@@ -213,10 +241,109 @@ def register_pupil(message):
     m = message.text.split(' ')
     x.status = 2
     db.session.commit()
-    if len(m)!=6:
-        bot.send_message(message.chat.id, 'Ошибка аргументов. Должно быть 6 слов ', reply_markup=markup)
+    if len(m)!=7:
+        bot.send_message(message.chat.id, 'Ошибка аргументов. Должно быть 7 слов ', reply_markup=markup)
     else:
         p = Pupil(m[0],m[1],m[2],m[3],m[4],m[5])
         db.session.add(p)
         db.session.commit()
         bot.send_message(message.chat.id, 'Ученик успешно создан ', reply_markup=markup)
+
+@bot.message_handler(func=lambda message: message.text == 'Учитель' and check_status(message.chat.id) == 6)
+def register_pupil_info(message):
+    x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
+    x.status = 8
+    db.session.commit()
+    bot.send_message(message.chat.id, 'Передайте аргументы. Должно быть 7 слов ')
+
+
+@bot.message_handler(func=lambda message: check_status(message.chat.id) == 8)
+def register_pupil(message):
+    x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
+    m = message.text.split(' ')
+    x.status = 2
+    db.session.commit()
+    if len(m)!=7:
+        bot.send_message(message.chat.id, 'Ошибка аргументов. Должно быть 7 слов ', reply_markup=markup)
+    else:
+        p = Teacher(m[0],m[1],m[2],m[3],m[4],m[5],m[6])
+        db.session.add(p)
+        db.session.commit()
+        bot.send_message(message.chat.id, 'Учитель успешно создан ', reply_markup=markup)
+
+
+@bot.message_handler(func=lambda message: message.text == 'Админ Системы' and check_status(message.chat.id) == 6)
+def register_sys_info(message):
+    x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
+    x.status = 9
+    db.session.commit()
+    bot.send_message(message.chat.id, 'Передайте аргументы. Должно быть 5 слов через пробел')
+
+
+@bot.message_handler(func=lambda message: check_status(message.chat.id) == 9)
+def register_sys(message):
+    x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
+    m = message.text.split(' ')
+    x.status = 2
+    db.session.commit()
+    if len(m)!=5:
+        bot.send_message(message.chat.id, 'Ошибка аргументов. Должно быть 5 слов ', reply_markup=markup)
+    else:
+        p = Sys_Admin(m[0], m[1], m[2], m[3], m[4])
+        db.session.add(p)
+        db.session.commit()
+        bot.send_message(message.chat.id, 'Админитсратор системы  успешно создан ', reply_markup=markup)
+
+
+# Действия учителя
+@bot.message_handler(func=lambda message: message.text == 'Новый модуль' and check_teacher_status(message.chat.id) == 10)
+def register_module_info(message):
+    x = Teacher.query.filter(Teacher.chat_id == message.chat.id).first()
+    x.status = 11
+    db.session.commit()
+    bot.send_message(message.chat.id, 'Введите Название Модуля')
+
+@bot.message_handler(func=lambda message: check_teacher_status(message.chat.id) == 11)
+def register_sys(message):
+    x = Teacher.query.filter(Teacher.chat_id == message.chat.id).first()
+    m = message.text.split(' ')
+    print('dcdc',len(m))
+    x.status = 10
+    db.session.commit()
+    if len(m)!=1:
+        bot.send_message(message.chat.id, 'Ошибка аргументов. Должно быть 1 словo ', reply_markup=teahcer_markup)
+    else:
+        p = Module(m[0])
+        db.session.add(p)
+        db.session.commit()
+        bot.send_message(message.chat.id, 'Новый модуль успешно создан', reply_markup=teahcer_markup)
+
+@bot.message_handler(func=lambda message: message.text == 'Добавить задание' and check_teacher_status(message.chat.id) == 10)
+def register_task_info(message):
+    x = Teacher.query.filter(Teacher.chat_id == message.chat.id).first()
+    y = Module.query.all()
+    s = 'Список Модулей' +'\n'+'\n'
+    for i in y:
+        s+= '{}  {}'.format(i.id, i.name) + '\n'
+    x.status = 12
+    db.session.commit()
+    result = s+ '\n\n\n' + 'Введите Текст вопроса $ ответ $ id Модуля'
+    bot.send_message(message.chat.id, result)
+
+@bot.message_handler(func=lambda message: check_teacher_status(message.chat.id) == 12)
+def register_task_info(message):
+    x = Teacher.query.filter(Teacher.chat_id == message.chat.id).first()
+    x.status = 10
+    db.session.commit()
+    m = message.text.split('$')
+    data = []
+    for x in m:
+        data.append(x.strip())
+    print(data)
+    p = Question(data[0],data[1],int(data[2]))
+    try:
+        db.session.add(p)
+        db.session.commit()
+        bot.send_message(message.chat.id, 'Вопрос создан', reply_markup=teahcer_markup)
+    except:
+        bot.send_message(message.chat.id, 'Произошла ошибка', reply_markup=teahcer_markup)

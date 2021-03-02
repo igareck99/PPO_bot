@@ -77,10 +77,8 @@ class Module(db.Model):
     name = db.Column(db.String(120), index=True)
     hours = db.Column(db.Integer, default=2)
     tasks = db.Column('Question', db.ForeignKey('question.id'))
-    def __str__(self,name,hours,active):
+    def __init__(self,name):
         self.name = name
-        self.hours = hours
-        self.hours = hours
 
     def __repr__(self):
         return f'{self.id} {self.name}'
@@ -93,9 +91,10 @@ class Question(db.Model):
     module_id = db.Column(db.Integer, db.ForeignKey('module.id'))
     anwser = db.Column(db.String(100), index=True)
     image = db.Column(db.LargeBinary, nullable=True)
-    def __init__(self,text,anwser): #Доделать
+    def __init__(self,text,anwser,module_id): #Доделать
         self.text = text
         self.anwser = anwser
+        self.module_id = module_id
 
     def __repr__(self):
         return f'{self.id} {self.text}'
@@ -152,10 +151,12 @@ class Sys_Admin(db.Model):
     role = db.Column(db.SmallInteger, default=ROLE_SYS)
     chat_id = db.Column(db.Integer)
     status = db.Column(db.SmallInteger, default=0)
-    def __init__(self,login,password):
+    def __init__(self,name,surname,patronim,login,password):
         self.login = login
-        self.time = password
-        self.role = ROLE_SYS
+        self.password = password
+        self.name = name
+        self.surname = surname
+        self.patronim = patronim
 
     def __repr__(self):
         return f'{self.id} {self.login}'

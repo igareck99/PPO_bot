@@ -11,3 +11,11 @@ def check_status(i):
         return x.status
     except AttributeError:
         return 1
+
+def check_teacher_status(i):
+    try:
+        x = Teacher.query.filter(Teacher.chat_id == i).first()
+        print(x.status)
+        return x.status
+    except AttributeError:
+        return 1
