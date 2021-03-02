@@ -5,9 +5,9 @@ import json
 import telebot
 import re
 from models import *
-from help_func import *
 token = '1628527567:AAFoB0fsz-8QKfkGow8biMztfSDUuYWXSjw'
 bot = telebot.TeleBot(token)
+from help_func import *
 chat_status = {'auth':1,'init':2,'add_group_sys':3}
 markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
 itembtn1 = telebot.types.KeyboardButton('Добавить Новую группу')
@@ -52,8 +52,9 @@ def start(message):
     bot.send_message(message.chat.id, 'Здравствуйте! Введите Свои данные в формате логин пароль')
     print(message)
 
-@bot.message_handler(func=lambda message: len(message.text.split()) == 2 and Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()==1)
+@bot.message_handler(func=lambda message: len(message.text.split()) == 2 and check_status(message.chat.id) ==1)
 def auth(message):
+    print('Auth message started')
     m = message.text.split()
     login = m[0]
     password = m[1]
@@ -64,7 +65,6 @@ def auth(message):
     sys_admin = Sys_Admin.query.filter(Sys_Admin.login == login) \
         .filter(Sys_Admin.password == password).first()
     x = notNone([pupil, teacher, sys_admin])
-    print(x.chat)
     if x:
         if x.login == login and x.password == password:
             if isinstance(x, Sys_Admin):
@@ -85,7 +85,7 @@ def add_group_text(message):
     db.session.commit()
     bot.send_message(message.chat.id, 'Введите название группы и время через пробел')
 
-@bot.message_handler(func=lambda message: Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == 3 )
+@bot.message_handler(func=lambda message: check_status(message.chat.id) == 3)
 def add_group(message):
     s = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
     s.status = 2
@@ -97,7 +97,7 @@ def add_group(message):
     bot.send_message(message.chat.id, 'Группа была успешно добавлена', reply_markup=markup)
 
 
-@bot.message_handler(func=lambda message: message.text == 'Добавить Студента в группу' and Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == 2)
+@bot.message_handler(func=lambda message: message.text == 'Добавить Студента в группу' and check_status(message.chat.id) == 2)
 def add_student_to_group_info(message):
     p = Pupil.query.all()
     x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
@@ -115,7 +115,7 @@ def add_student_to_group_info(message):
     db.session.commit()
     bot.send_message(message.chat.id, pupil_string)
 
-@bot.message_handler(func=lambda message: Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == 4)
+@bot.message_handler(func=lambda message: check_status(message.chat.id)== 4)
 def add_student_to_group(message):
     x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
     m = message.text.split(' ')
@@ -143,7 +143,7 @@ def add_student_to_group(message):
     bot.send_message(message.chat.id, 'Ученик добавлен в группу', reply_markup=markup)
 
 
-@bot.message_handler(func=lambda message: message.text == 'Назначить группу преподавателю' and Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == 2)
+@bot.message_handler(func=lambda message: message.text == 'Назначить группу преподавателю' and check_status(message.chat.id) == 2)
 def add_teacher_to_group_info(message):
     t = Teacher.query.all()
     x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
@@ -162,7 +162,7 @@ def add_teacher_to_group_info(message):
     bot.send_message(message.chat.id, teacher_string)
 
 
-@bot.message_handler(func=lambda message: Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status ==5)
+@bot.message_handler(func=lambda message: check_status(message.chat.id) ==5)
 def add_teacher_to_group(message):
     x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
     m = message.text.split(' ')
@@ -190,20 +190,33 @@ def add_teacher_to_group(message):
     bot.send_message(message.chat.id, 'Учитель закреплен за группой', reply_markup=markup)
 
 
-@bot.message_handler(func=lambda message: message.text == 'Зарегистрировать пользователя' and Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == 2)
+
+@bot.message_handler(func=lambda message: message.text == 'Зарегистрировать пользователя'and check_status(message.chat.id) == 2)
 def register_user(message):
     x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
-    x.status = 5
+    x.status = 6
     db.session.commit()
-    bot.send_message(message.chat.id, 'Выберите кого вы хотите зарегестрировать', reply_markup=register_markup)
+    bot.send_message(message.chat.id, 'Выберите кого вы хотите зарегестрировать. ', reply_markup=register_markup)
 
-#????????
-@bot.message_handler(func=lambda message: Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first().status == 5)
-def register_user(message):
+
+@bot.message_handler(func=lambda message: message.text == 'Ученик' and check_status(message.chat.id) == 6)
+def register_pupil_info(message):
     x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
-    x.status = 5
+    x.status = 7
     db.session.commit()
-    bot.send_message(message.chat.id, 'Выберите кого вы хотите зарегестрировать', reply_markup=register_markup)
+    bot.send_message(message.chat.id, 'Передайте аргументы. Должно быть 6 слов ')
 
 
-
+@bot.message_handler(func=lambda message: check_status(message.chat.id) == 7)
+def register_pupil(message):
+    x = Sys_Admin.query.filter(Sys_Admin.chat_id == message.chat.id).first()
+    m = message.text.split(' ')
+    x.status = 2
+    db.session.commit()
+    if len(m)!=6:
+        bot.send_message(message.chat.id, 'Ошибка аргументов. Должно быть 6 слов ', reply_markup=markup)
+    else:
+        p = Pupil(m[0],m[1],m[2],m[3],m[4],m[5])
+        db.session.add(p)
+        db.session.commit()
+        bot.send_message(message.chat.id, 'Ученик успешно создан ', reply_markup=markup)
