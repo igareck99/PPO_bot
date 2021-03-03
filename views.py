@@ -25,10 +25,13 @@ itembtn11 = telebot.types.KeyboardButton('Список групп')
 itembtn12 = telebot.types.KeyboardButton('Результаты тестирования')
 itembtn13 = telebot.types.KeyboardButton('Создать Билет для тестирования')
 itembtn14 = telebot.types.KeyboardButton('Новый модуль')
+itembtn15 = telebot.types.KeyboardButton('Пройти тестирование')
 teahcer_markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
 teahcer_markup.row(itembtn13, itembtn12)
 teahcer_markup.row(itembtn11, itembtn10)
 teahcer_markup.row(itembtn14)
+pupil_markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
+pupil_markup.row(itembtn15)
 markup.row(itembtn1, itembtn2)
 markup.row(itembtn3, itembtn4)
 markup.row(itembtn9)
@@ -66,11 +69,16 @@ def start(message):
                 db.session.commit()
                 bot.send_message(message.chat.id, 'Здравствуйте,  {} {}'.format(x.name, x.patronim),
                                  reply_markup=teahcer_markup)
+            elif isinstance(x,Pupil):
+                x.status = 15
+                db.session.commit()
+                bot.send_message(message.chat.id, 'Здравствуйте,  {} {}'.format(x.name, x.patronim),
+                                 reply_markup=pupil_markup)
             return
     bot.send_message(message.chat.id, 'Здравствуйте! Введите Свои данные в формате логин пароль')
     print(message)
 
-@bot.message_handler(func=lambda message: len(message.text.split()) == 2 and check_status(message.chat.id) ==1 and check_teacher_status(message.chat.id)==1)
+@bot.message_handler(func=lambda message: len(message.text.split()) == 2 and check_status(message.chat.id) ==1 and check_teacher_status(message.chat.id)==1 and check_pupil_status(message.chat.id)==1)
 def auth(message):
     m = message.text.split()
     login = m[0]
@@ -93,6 +101,11 @@ def auth(message):
                 bot.send_message(message.chat.id, 'Здравствуйте,  {} {}'.format(x.name, x.patronim), reply_markup=teahcer_markup)
                 x.chat_id = message.chat.id
                 x.status = 10
+                db.session.commit()
+            elif isinstance(x, Pupil):
+                bot.send_message(message.chat.id, 'Здравствуйте,  {} {}'.format(x.name, x.patronim), reply_markup=pupil_markup)
+                x.chat_id = message.chat.id
+                x.status = 15
                 db.session.commit()
     else:
         bot.send_message(message.chat.id, 'Неверный пароль, попробуйте ещё раз')
@@ -307,7 +320,6 @@ def register_module_info(message):
 def register_module(message):
     x = Teacher.query.filter(Teacher.chat_id == message.chat.id).first()
     m = message.text.split(' ')
-    print('dcdc',len(m))
     x.status = 10
     db.session.commit()
     if len(m)!=1:
@@ -339,9 +351,8 @@ def register_task_info(message):
     data = []
     for x in m:
         data.append(x.strip())
-    print(data)
-    p = Question(data[0],data[1],int(data[2]))
     try:
+        p = Question(data[0], data[1], int(data[2]))
         db.session.add(p)
         db.session.commit()
         bot.send_message(message.chat.id, 'Вопрос создан', reply_markup=teahcer_markup)
@@ -363,7 +374,7 @@ def ticket_info(message):
     x = Teacher.query.filter(Teacher.chat_id == message.chat.id).first()
     x.status = 13
     db.session.commit()
-    bot.send_message(message.chat.id, 'Введите количество вопросов, количество заданий из модуля,количество модулей и дату проведения. Дату введите в формате: год-месяц-день час:минуты')
+    bot.send_message(message.chat.id, 'Введите количество вопросов, количество заданий из модуля,количество модулей и дату проведения и id групп в формате $id $id. Дату введите в формате: год-месяц-день час:минуты')
 
 @bot.message_handler(func=lambda message:check_teacher_status(message.chat.id) == 13)
 def ticket_add(message):
@@ -371,6 +382,31 @@ def ticket_add(message):
     x.status = 10
     db.session.commit()
     m = message.text.split(' ')
+    print(m)
     if len(m)==5:
-        date_str  = m[3]+' '+m[4]
-        l = generate_ticket(m[0],m[1],m[2],datetime.datetime.strptime(date_str))
+        date_str = m[3]+' '+m[4]
+        group_str = ''
+        for x in m:
+            if '$' in x:
+                group_str+=x[1::]
+        generate_ticket(all_amount = m[0],mode=m[1],mode_amount=m[2],date = datetime.datetime.strptime(date_str),groups = group_str)
+        bot.send_message(message.chat.id, 'Билет успешно создан', reply_markup=teahcer_markup)
+
+#Функционал для ученика
+@bot.message_handler(func=lambda message: message.text == 'Пройти тестирование' and check_pupil_status(message.chat.id) == 15)
+def test_pupil_info(message):
+    p = Pupil.query.filter(Pupil.chat_id == message.chat.id).first()
+    t = Ticket.query.all()
+    q = db.session.query(Group).filter_by(id=p.id).all()
+    l = []
+    for x in t:
+        for i in q:
+            if str(i.id) in x.groups.split(' '):
+                l.append(x.id)
+    s = ''
+    print(l)
+    for x in l:
+        z = Ticket.query.filter(Ticket.id == x).first()
+        print('ZZZZ',type(z))
+        s+=str(z.id) + ' Дата  ' + z.date
+    bot.send_message(message.chat.id, 'Вам доступны тесты \n {}'.format(s))

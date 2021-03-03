@@ -107,8 +107,6 @@ class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), index=True)
     time = db.Column(db.String(120), index=True)
-    ticket = db.relationship("Ticket")
-
 
     def __init__(self,name,time):
         self.name = name
@@ -127,7 +125,6 @@ class Solution(db.Model):
     pupil_id = db.relationship('Pupil', backref='solution',lazy='dynamic')
     mark = db.Column(db.Integer, index=True)
     comment = db.Column(db.String(500), index=True)
-    solutions = db.relationship("Pupil")
 
 
     def __repr__(self):
@@ -139,13 +136,12 @@ class Ticket(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ids = db.Column(db.String(200), index=True)
     date = db.Column(db.DateTime)
-    group_id = db.Column(db.Integer, db.ForeignKey('group.id'))
+    groups = db.Column(db.String(40))
 
-    def __init__(self,ids,date,group_id):
+    def __init__(self,ids,date,groups):
         self.ids = ids
         self.date = date
-        self.group_id = group_id
-
+        self.groups = groups
 
     def __repr__(self):
         return f'{self.id} {self.ids}'

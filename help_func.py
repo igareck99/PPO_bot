@@ -18,13 +18,18 @@ def check_status(i):
 def check_teacher_status(i):
     try:
         x = Teacher.query.filter(Teacher.chat_id == i).first()
-        print(x.status)
+        #print(x.status)
+        return x.status
+    except AttributeError:
+        return 1
+def check_pupil_status(i):
+    try:
+        x = Pupil.query.filter(Pupil.chat_id == i).first()
         return x.status
     except AttributeError:
         return 1
 
-
-def generate_ticket(all_amount, mode_amount=0, mode=0, date=datetime.datetime.now()):
+def generate_ticket(all_amount,groups, mode_amount=0, mode=0, date=datetime.datetime.now()):
     q = Question.query.all()
     random.seed(5000)
     list_ticket = []
@@ -37,7 +42,7 @@ def generate_ticket(all_amount, mode_amount=0, mode=0, date=datetime.datetime.no
         available_id.remove(index_quesion+1)
         list_ticket.append(index_quesion-1)
         string_ids+=str(q[index_quesion].id) +'\n'
-    ticket = Ticket(string_ids,date)
-    db.session.add(ticket)
+    t = Ticket(ids=string_ids,date = date,groups=groups)
+    db.session.add(t)
     db.session.commit()
     return list_ticket
