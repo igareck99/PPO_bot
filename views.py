@@ -3,12 +3,12 @@ import requests
 from app import app, db
 import json
 import telebot
+from datetime import datetime
 import re
 from models import *
 token = '1628527567:AAFoB0fsz-8QKfkGow8biMztfSDUuYWXSjw'
 bot = telebot.TeleBot(token)
 from help_func import *
-chat_status = {'auth':1,'init':2,'add_group_sys':3}
 markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
 itembtn1 = telebot.types.KeyboardButton('Добавить Новую группу')
 itembtn2 = telebot.types.KeyboardButton('Добавить Студента в группу')
@@ -304,7 +304,7 @@ def register_module_info(message):
     bot.send_message(message.chat.id, 'Введите Название Модуля')
 
 @bot.message_handler(func=lambda message: check_teacher_status(message.chat.id) == 11)
-def register_sys(message):
+def register_module(message):
     x = Teacher.query.filter(Teacher.chat_id == message.chat.id).first()
     m = message.text.split(' ')
     print('dcdc',len(m))
@@ -347,3 +347,30 @@ def register_task_info(message):
         bot.send_message(message.chat.id, 'Вопрос создан', reply_markup=teahcer_markup)
     except:
         bot.send_message(message.chat.id, 'Произошла ошибка', reply_markup=teahcer_markup)
+
+@bot.message_handler(func=lambda message: message.text == 'Список групп' and check_teacher_status(message.chat.id) == 10)
+def teacher_list_group(message):
+    g = Group.query.all()
+    pupil_string = ''
+    pupil_string += '\n' + 'Cписок групп' + '\n'
+    for y in g:
+        s = '{} {} {}'.format(y.id, y.name, y.time)
+        pupil_string += s + '\n'
+    bot.send_message(message.chat.id, pupil_string, reply_markup=teahcer_markup)
+
+@bot.message_handler(func=lambda message: message.text == 'Создать Билет для тестирования' and check_teacher_status(message.chat.id) == 10)
+def ticket_info(message):
+    x = Teacher.query.filter(Teacher.chat_id == message.chat.id).first()
+    x.status = 13
+    db.session.commit()
+    bot.send_message(message.chat.id, 'Введите количество вопросов, количество заданий из модуля,количество модулей и дату проведения. Дату введите в формате: год-месяц-день час:минуты')
+
+@bot.message_handler(func=lambda message:check_teacher_status(message.chat.id) == 13)
+def ticket_add(message):
+    x = Teacher.query.filter(Teacher.chat_id == message.chat.id).first()
+    x.status = 10
+    db.session.commit()
+    m = message.text.split(' ')
+    if len(m)==5:
+        date_str  = m[3]+' '+m[4]
+        l = generate_ticket(m[0],m[1],m[2],datetime.datetime.strptime(date_str))

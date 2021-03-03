@@ -1,4 +1,7 @@
-from models import Teacher,Sys_Admin,Pupil
+from models import *
+import random
+import datetime
+from app import db
 def notNone(x):
     for i in x:
         if i is not None:
@@ -19,3 +22,22 @@ def check_teacher_status(i):
         return x.status
     except AttributeError:
         return 1
+
+
+def generate_ticket(all_amount, mode_amount=0, mode=0, date=datetime.datetime.now()):
+    q = Question.query.all()
+    random.seed(5000)
+    list_ticket = []
+    index = all_amount
+    available_id= [x for x in range(1,all_amount+1)] if all_amount<=len(q) else [x for x in range(1,len(q))]
+    string_ids = ''
+    while index!= 0:
+        index = index - 1
+        index_quesion = random.choice(available_id)-1
+        available_id.remove(index_quesion+1)
+        list_ticket.append(index_quesion-1)
+        string_ids+=str(q[index_quesion].id) +'\n'
+    ticket = Ticket(string_ids,date)
+    db.session.add(ticket)
+    db.session.commit()
+    return list_ticket
