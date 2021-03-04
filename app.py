@@ -22,7 +22,7 @@ admin.add_view(ModelView(Question, db.session))
 admin.add_view(ModelView(Group, db.session))
 admin.add_view(ModelView(Solution, db.session))
 admin.add_view(ModelView(Ticket, db.session))
-admin.add_view(ModelView(Chat_table,db.session))
+admin.add_view(ModelView(Teacher_Admin,db.session))
 #sslify = SSLify(app)
 
 token = 'https://api.telegram.org/bot1628527567:AAFoB0fsz-8QKfkGow8biMztfSDUuYWXSjw/'

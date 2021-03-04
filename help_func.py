@@ -28,6 +28,12 @@ def check_pupil_status(i):
         return x.status
     except AttributeError:
         return 1
+def check_ta_status(i):
+    try:
+        x = Teacher_Admin.query.filter(Teacher_Admin.chat_id == i).first()
+        return x.status
+    except AttributeError:
+        return 1
 
 def generate_ticket(all_amount,groups, date=datetime.datetime.now()):
     q = Question.query.all()

@@ -26,13 +26,21 @@ itembtn12 = telebot.types.KeyboardButton('Результаты тестиров�
 itembtn13 = telebot.types.KeyboardButton('Создать Билет для тестирования')
 itembtn14 = telebot.types.KeyboardButton('Новый модуль')
 itembtn15 = telebot.types.KeyboardButton('Пройти тестирование')
+itembtn16 = telebot.types.KeyboardButton('Результаты тестирования')
 itembtn17 = telebot.types.KeyboardButton('Назад')
+itembtn18 = telebot.types.KeyboardButton('Списки групп преподавателя')
+itembtn19 = telebot.types.KeyboardButton('Запланированные тестирования')
+itembtn20 = telebot.types.KeyboardButton('Посмотреть задания')
 teahcer_markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
 teahcer_markup.row(itembtn13, itembtn12)
 teahcer_markup.row(itembtn11, itembtn10)
 teahcer_markup.row(itembtn14)
 pupil_markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
 pupil_test = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
+teacher_admin = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
+teacher_admin.row(itembtn16,itembtn17)
+teacher_admin.row(itembtn18,itembtn19)
+teacher_admin.row(itembtn20)
 pupil_test.row(itembtn17)
 pupil_markup.row(itembtn15)
 markup.row(itembtn1, itembtn2)
@@ -53,12 +61,15 @@ def start(message):
     pupil = Pupil.query.all()
     teacher = Teacher.query.all()
     sys_admin = Sys_Admin.query.all()
+    t_a = Teacher_Admin.query.all()
     l = []
     for x in pupil:
         l.append(x)
     for x in teacher:
         l.append(x)
     for x in sys_admin:
+        l.append(x)
+    for x in t_a:
         l.append(x)
     for x in l:
         if x.chat_id == message.chat.id:
@@ -77,11 +88,16 @@ def start(message):
                 db.session.commit()
                 bot.send_message(message.chat.id, 'Здравствуйте,  {} {}'.format(x.name, x.patronim),
                                  reply_markup=pupil_markup)
+            elif isinstance(x,Teacher_Admin):
+                x.status = 20
+                db.session.commit()
+                bot.send_message(message.chat.id, 'Здравствуйте,  {} {}'.format(x.name, x.patronim),
+                                 reply_markup=teacher_admin)
             return
     bot.send_message(message.chat.id, 'Здравствуйте! Введите Свои данные в формате логин пароль')
     print(message)
 
-@bot.message_handler(func=lambda message: len(message.text.split()) == 2 and check_status(message.chat.id) ==1 and check_teacher_status(message.chat.id)==1 and check_pupil_status(message.chat.id)==1)
+@bot.message_handler(func=lambda message: len(message.text.split()) == 2 and check_status(message.chat.id) ==1 and check_teacher_status(message.chat.id)==1 and check_pupil_status(message.chat.id)==1 and check_ta_status(message.chat.id)==1)
 def auth(message):
     m = message.text.split()
     login = m[0]
@@ -92,7 +108,9 @@ def auth(message):
         .filter(Teacher.password == password).first()
     sys_admin = Sys_Admin.query.filter(Sys_Admin.login == login) \
         .filter(Sys_Admin.password == password).first()
-    x = notNone([pupil, teacher, sys_admin])
+    ta_admin = Teacher_Admin.query.filter(Teacher_Admin.login == login) \
+        .filter(Teacher_Admin.password == password).first()
+    x = notNone([pupil, teacher, sys_admin,ta_admin])
     if x:
         if x.login == login and x.password == password:
             if isinstance(x, Sys_Admin):
@@ -109,6 +127,11 @@ def auth(message):
                 bot.send_message(message.chat.id, 'Здравствуйте,  {} {}'.format(x.name, x.patronim), reply_markup=pupil_markup)
                 x.chat_id = message.chat.id
                 x.status = 15
+                db.session.commit()
+            elif isinstance(x, Teacher_Admin):
+                bot.send_message(message.chat.id, 'Здравствуйте,  {} {}'.format(x.name, x.patronim), reply_markup=teacher_admin)
+                x.chat_id = message.chat.id
+                x.status = 20
                 db.session.commit()
     else:
         bot.send_message(message.chat.id, 'Неверный пароль, попробуйте ещё раз')
