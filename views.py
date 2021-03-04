@@ -419,6 +419,20 @@ def ticket_add(message):
         #generate_ticket(all_amount = m[0],date = datetime.datetime.strptime(date_str),groups = group_str)
         bot.send_message(message.chat.id, 'Билет успешно создан', reply_markup=teahcer_markup)
 
+@bot.message_handler(func=lambda message:check_teacher_status(message.chat.id) == 10 and message.text == 'Результаты тестирования')
+def res_test_teacher(message):
+    s = Solution.query.all()
+    r = ''
+    l = []
+    for x in s:
+        p = Pupil.query.filter(Pupil.id==(x.pupil_id)).first()
+        if p is not None:
+            l.append(p)
+    print(l)
+    for i, y in zip(s,l):
+        r+=y.name+' '+y.surname+'Номер теста: '+str(i.id)+'  Оценка: ' + str(i.mark) +'\n'
+    bot.send_message(message.chat.id, r, reply_markup=teahcer_markup)
+
 #Функционал для ученика
 @bot.message_handler(func=lambda message: message.text == 'Пройти тестирование' and check_pupil_status(message.chat.id) == 15)
 def test_pupil_info(message):
@@ -502,5 +516,3 @@ def check_anwser(message):
     whose_solution.status = 15
     db.session.commit()
     bot.send_message(message.chat.id, 'Ваша оценка {}\n{}'.format(mae[-1],e), reply_markup=pupil_markup)
-
-    #for x in
