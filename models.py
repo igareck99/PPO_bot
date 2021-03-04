@@ -67,8 +67,10 @@ class Teacher(db.Model):
         self.password = password
 
     def __repr__(self):
-        return 'Teacher {} {} {}'.format(self.name,self.surname,self.patronim)
+        return 'Teacher {} {} {} {}'.format(self.id,self.name,self.surname,self.patronim)
 
+    def __str__(self):
+        return 'Teacher {} {} {} {}'.format(self.id, self.name, self.surname, self.patronim)
 
 class Module(db.Model):
     __tablename__ = 'module'

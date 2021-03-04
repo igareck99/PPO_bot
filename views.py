@@ -510,9 +510,80 @@ def check_anwser(message):
     whose_solution.status = 15
     mae = add_mark(right/amount)
     e = 'Правильно {} задания \n Неправильно {}'.format(right,wronng)
-    print('dcdcdc',e)
     s = Solution(message.text, 1, whose_solution.id,mae[-1],e)
     db.session.add(s)
     whose_solution.status = 15
     db.session.commit()
     bot.send_message(message.chat.id, 'Ваша оценка {}\n{}'.format(mae[-1],e), reply_markup=pupil_markup)
+
+
+#Администратор учебного процесса
+
+@bot.message_handler(func=lambda message: check_ta_status(message.chat.id) == 20 and message.text =='Результаты тестирования')
+def check_solution_result(message):
+    t = Teacher_Admin.query.filter(Teacher_Admin.chat_id == message.chat.id).first()
+    t.status = 20
+    db.session.commit()
+    s = Solution.query.all()
+    r = ''
+    l = []
+    for x in s:
+        p = Pupil.query.filter(Pupil.id==(x.pupil_id)).first()
+        if p is not None:
+            l.append(p)
+    print(l)
+    for i, y in zip(s,l):
+        r+=y.name+' '+y.surname+'Номер теста: '+str(i.id)+'  Оценка: ' + str(i.mark) +'\n'
+    bot.send_message(message.chat.id, r, reply_markup=teacher_admin)
+
+@bot.message_handler(func=lambda message: check_ta_status(message.chat.id) == 20 and message.text =='Списки групп преподавателя')
+def check_solution_result(message):
+    t = Teacher_Admin.query.filter(Teacher_Admin.chat_id == message.chat.id).first()
+    t.status = 21
+    db.session.commit()
+    l = Teacher_Admin.query.all()
+    s = ''
+    for x in l:
+        s += str(x.id) +'  '+x.name+'  ' +x.patronim + '  '+ x.surname
+    bot.send_message(message.chat.id, 'Введите id Преподавателя')
+
+@bot.message_handler(func=lambda message: check_ta_status(message.chat.id) == 21)
+def check_solution_result(message):
+    m = message.text.split(' ')
+    t = Teacher_Admin.query.filter(Teacher_Admin.chat_id == message.chat.id).first()
+    t.status = 20
+    db.session.commit()
+    if len(m)==1:
+        try:
+            a = int(m)
+            taecher = Teacher.query.filter(Teacher.id==a).first()
+            p = db.session.query(Teacher).filter_by(id=a).all()
+            print(p)
+        except ValueError:
+            bot.send_message(message.chat.id, 'Некорректный ввод')
+    bot.send_message(message.chat.id, '1 IT 22:00 Sunday', reply_markup=teacher_admin)
+
+@bot.message_handler(func=lambda message: check_ta_status(message.chat.id) == 20 and message.text =='Запланированные тестирования')
+def planned_tests(message):
+    d = datetime.datetime.now()
+    s = Ticket.query.filter(Ticket.date>d).all()
+    result = ''
+    for x in s:
+        t = x.groups.split(' ')
+        print(t)
+        for y in t:
+            g = Group.query.filter(Group.id==int(y)).first()
+            print()
+            result +=str(x.id)+'  '+str(x.date) +' '+g.name +'\n'
+    bot.send_message(message.chat.id, result, reply_markup=teacher_admin)
+
+@bot.message_handler(func=lambda message: check_ta_status(message.chat.id) == 20 and message.text =='Посмотреть задания')
+def planned_tests(message):
+    g = Question.query.all()
+    result = ''
+    for x in g:
+        print(x.module_id)
+        mod = Module.query.filter(Module.id == 1).first().name
+        result+=str(x.id)+' '+x.text +'Модуль' +mod+'\n'+'Ответ:  '+x.anwser +'\n'
+    bot.send_message(message.chat.id, result, reply_markup=teacher_admin)
+
