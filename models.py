@@ -21,7 +21,6 @@ class Pupil(db.Model):
     password = db.Column(db.String(120), index = True,nullable = False)
     role = db.Column(db.SmallInteger, default = ROLE_STUDENT)
     cats = db.relationship('Group', secondary=course_pupils, backref=db.backref('pupil', lazy='dynamic'))
-    pupil_id = db.Column(db.Integer, db.ForeignKey('solution.id'))
     chat_id = db.Column(db.Integer)
     status = db.Column(db.SmallInteger, default=0)
     def __init__(self, name,surname,email,phone,login,password,patronim=''):
@@ -97,7 +96,7 @@ class Question(db.Model):
         self.module_id = module_id
 
     def __repr__(self):
-        return f'{self.id} {self.text}'
+        return f'{self.id} {self.text} {self.anwser}'
 
 
 
@@ -122,14 +121,17 @@ class Solution(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     homework_solution = db.Column(db.String(120), index=True)
     ticket = db.Column(db.Integer)
-    pupil_id = db.relationship('Pupil', backref='solution',lazy='dynamic')
+    pupil_id = db.Column(db.Integer)
     mark = db.Column(db.Integer, index=True)
     comment = db.Column(db.String(500), index=True)
 
 
-    def __init__(self,homework_solution,ticket):
+    def __init__(self,homework_solution,ticket,pupil_id,mark,comment):
         self.homework_solution = homework_solution
         self.ticket = ticket
+        self.pupil_id = pupil_id
+        self.mark = mark
+        self.comment = comment
 
 
     def __repr__(self):
@@ -154,6 +156,28 @@ class Ticket(db.Model):
 
 class Sys_Admin(db.Model):
     __tablename__ = 'sys_admin'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), index=True)
+    surname = db.Column(db.String(120), index=True)
+    patronim = db.Column(db.String(120), index=True, nullable=True, default='')
+    login = db.Column(db.String(120), index=True, nullable=False)
+    password = db.Column(db.String(120), index=True, nullable=False)
+    role = db.Column(db.SmallInteger, default=ROLE_SYS)
+    chat_id = db.Column(db.Integer)
+    status = db.Column(db.SmallInteger, default=0)
+    def __init__(self,name,surname,patronim,login,password):
+        self.login = login
+        self.password = password
+        self.name = name
+        self.surname = surname
+        self.patronim = patronim
+
+    def __repr__(self):
+        return f'{self.id} {self.login}'
+
+
+class Teacher_Admin(db.Model):
+    __tablename__ = 'teacher_admin'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), index=True)
     surname = db.Column(db.String(120), index=True)

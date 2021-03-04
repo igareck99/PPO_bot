@@ -29,7 +29,7 @@ def check_pupil_status(i):
     except AttributeError:
         return 1
 
-def generate_ticket(all_amount,groups, mode_amount=0, mode=0, date=datetime.datetime.now()):
+def generate_ticket(all_amount,groups, date=datetime.datetime.now()):
     q = Question.query.all()
     random.seed(5000)
     list_ticket = []
@@ -46,3 +46,14 @@ def generate_ticket(all_amount,groups, mode_amount=0, mode=0, date=datetime.date
     db.session.add(t)
     db.session.commit()
     return list_ticket
+
+def add_mark(a):
+    if a<0.5:
+        return 'Ваша оценка 2'
+    if a>0.5 and a<0.699:
+        return 'Ваша оценка 3'
+    if a>0.7 and a<0.859:
+        return 'Ваша оценка 4'
+    else:
+        return 'Ваша оценка 5'
+

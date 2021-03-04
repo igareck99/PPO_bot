@@ -386,13 +386,14 @@ def ticket_add(message):
     db.session.commit()
     m = message.text.split(' ')
     print(m)
-    if len(m)==5:
+    if len(m)>=6:
         date_str = m[3]+' '+m[4]
         group_str = ''
         for x in m:
             if '$' in x:
                 group_str+=x[1::]
-        generate_ticket(all_amount = m[0],mode=m[1],mode_amount=m[2],date = datetime.datetime.strptime(date_str),groups = group_str)
+        print('m0 {} m1 {} m2 {} date {} groups{}'.format(m[0],m[1],m[2],date_str,group_str))
+        #generate_ticket(all_amount = m[0],date = datetime.datetime.strptime(date_str),groups = group_str)
         bot.send_message(message.chat.id, 'Билет успешно создан', reply_markup=teahcer_markup)
 
 #Функционал для ученика
@@ -451,14 +452,32 @@ def start_test(message):
     for x in l:
         s+=Question.query.filter(Question.id == x).first().text + '\n'
 
-    bot.send_message(message.chat.id, '{}\n\nВведите ответы через пробел'.format(s))
+    bot.send_message(message.chat.id, '{}\n\nВведите ответы через $'.format(s))
 
 @bot.message_handler(func=lambda message: check_pupil_status(message.chat.id) == 17)
 def check_anwser(message):
-    m = message.text.split(' ')
     whose_solution = Pupil.query.filter(Pupil.chat_id == message.chat.id).first()
-
+    t = Ticket.query.filter(Ticket.id ==1).first().ids.split(' ')
+    mark = 0
+    right = 0
+    wronng = 0
+    amount = len(t)
+    m = message.text.split(' ')
+    index = list(map(int,t))
+    for x in index:
+        q = Question.query.filter(Question.id == int(x)).first()
+        if m[x-1]==q.anwser:
+            right+=1
+        else:
+            wronng+=1
+    whose_solution.status = 15
+    mae = add_mark(right/amount)
+    e = 'Правильно {} задания \n Неправильно {}'.format(right,wronng)
+    print('dcdcdc',e)
+    s = Solution(message.text, 1, whose_solution.id,mae[-1],e)
+    db.session.add(s)
     whose_solution.status = 15
     db.session.commit()
+    bot.send_message(message.chat.id, 'Ваша оценка {}\n{}'.format(mae[-1],e), reply_markup=pupil_markup)
 
     #for x in
