@@ -26,11 +26,14 @@ itembtn12 = telebot.types.KeyboardButton('Результаты тестиров�
 itembtn13 = telebot.types.KeyboardButton('Создать Билет для тестирования')
 itembtn14 = telebot.types.KeyboardButton('Новый модуль')
 itembtn15 = telebot.types.KeyboardButton('Пройти тестирование')
+itembtn17 = telebot.types.KeyboardButton('Назад')
 teahcer_markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
 teahcer_markup.row(itembtn13, itembtn12)
 teahcer_markup.row(itembtn11, itembtn10)
 teahcer_markup.row(itembtn14)
 pupil_markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
+pupil_test = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
+pupil_test.row(itembtn17)
 pupil_markup.row(itembtn15)
 markup.row(itembtn1, itembtn2)
 markup.row(itembtn3, itembtn4)
@@ -396,6 +399,8 @@ def ticket_add(message):
 @bot.message_handler(func=lambda message: message.text == 'Пройти тестирование' and check_pupil_status(message.chat.id) == 15)
 def test_pupil_info(message):
     p = Pupil.query.filter(Pupil.chat_id == message.chat.id).first()
+    p.status = 16
+    db.session.commit()
     t = Ticket.query.all()
     q = db.session.query(Group).filter_by(id=p.id).all()
     l = []
@@ -407,6 +412,53 @@ def test_pupil_info(message):
     print(l)
     for x in l:
         z = Ticket.query.filter(Ticket.id == x).first()
-        print('ZZZZ',type(z))
-        s+=str(z.id) + ' Дата  ' + z.date
-    bot.send_message(message.chat.id, 'Вам доступны тесты \n {}'.format(s))
+        s+=str(z.id) + ' Дата  ' + str(z.date)
+    bot.send_message(message.chat.id, 'Вам доступны тесты \n {} \n\nДля прохождения тестирования отправьте номер теста'.format(s),reply_markup=pupil_test)
+
+
+@bot.message_handler(func=lambda message: message.text == 'Назад' and check_pupil_status(message.chat.id) == 16)
+def return_pupil(message):
+    p = Pupil.query.filter(Pupil.chat_id == message.chat.id).first()
+    p.status = 15
+    db.session.commit()
+    bot.send_message(message.chat.id,'Выберите действие', reply_markup=pupil_markup)
+
+@bot.message_handler(func=lambda message: check_pupil_status(message.chat.id) == 16)
+def start_test(message):
+    p = Pupil.query.filter(Pupil.chat_id == message.chat.id).first()
+    p.status = 17
+    db.session.commit()
+    m = message.text
+    if len(m)!=1:
+        p.status = 15
+        db.session.commit()
+        bot.send_message(message.chat.id, 'Некорректный ввод', reply_markup=pupil_markup)
+    try:
+        m = int(m)
+    except ValueError:
+        p.status = 15
+        db.session.commit()
+        bot.send_message(message.chat.id, 'Некорректный ввод', reply_markup=pupil_markup)
+    print(m)
+    t = Ticket.query.filter(Ticket.id == m).first()
+    t = t.ids.split(' ')
+    l = []
+    for x in t:
+        if x.isdigit():
+            l.append(x)
+    l = list(map(int, l))
+    s = ''
+    for x in l:
+        s+=Question.query.filter(Question.id == x).first().text + '\n'
+
+    bot.send_message(message.chat.id, '{}\n\nВведите ответы через пробел'.format(s))
+
+@bot.message_handler(func=lambda message: check_pupil_status(message.chat.id) == 17)
+def check_anwser(message):
+    m = message.text.split(' ')
+    whose_solution = Pupil.query.filter(Pupil.chat_id == message.chat.id).first()
+
+    whose_solution.status = 15
+    db.session.commit()
+
+    #for x in

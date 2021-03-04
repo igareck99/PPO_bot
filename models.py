@@ -127,6 +127,11 @@ class Solution(db.Model):
     comment = db.Column(db.String(500), index=True)
 
 
+    def __init__(self,homework_solution,ticket):
+        self.homework_solution = homework_solution
+        self.ticket = ticket
+
+
     def __repr__(self):
         return f'{self.id} {self.pupil}'
 
@@ -144,7 +149,7 @@ class Ticket(db.Model):
         self.groups = groups
 
     def __repr__(self):
-        return f'{self.id} {self.ids}'
+        return f'{self.ids}'
 
 
 class Sys_Admin(db.Model):
